@@ -139,17 +139,18 @@ class MoviesListViewModel(
                     canLoadMore = true,
                 )
             }
-            runRepositoryAction {
+            val loadedCount = runRepositoryAction {
                 moviesRepository.refreshMovies(
                     filters = _state.value.filters,
                     page = 1,
                     pageSize = PageSize,
                 )
-            }
+            }.getOrNull()
             setState {
                 copy(
                     isLoading = false,
                     isRefreshing = false,
+                    canLoadMore = loadedCount == null || loadedCount >= PageSize,
                     emptyMessage = if (movies.isEmpty()) "No movies available." else null,
                 )
             }
@@ -169,23 +170,27 @@ class MoviesListViewModel(
                     errorMessage = null,
                 )
             }
-            val succeeded = runRepositoryAction {
+            val loadedCount = runRepositoryAction {
                 moviesRepository.refreshMovies(
                     filters = _state.value.filters,
                     page = nextPage,
                     pageSize = PageSize,
                 )
-            }
+            }.getOrNull()
             setState {
                 copy(
-                    currentPage = if (succeeded) nextPage else snapshot.currentPage,
+                    currentPage = if (loadedCount != null) nextPage else snapshot.currentPage,
                     isLoadingNextPage = false,
+                    canLoadMore = when {
+                        loadedCount == null -> snapshot.canLoadMore
+                        else -> loadedCount >= PageSize
+                    },
                 )
             }
         }
     }
 
-    private suspend fun runRepositoryAction(action: suspend () -> Unit): Boolean {
+    private suspend fun <T> runRepositoryAction(action: suspend () -> T): Result<T> {
         return runCatching { action() }
             .onFailure { error ->
                 val message = error.asUserMessage()
@@ -200,7 +205,6 @@ class MoviesListViewModel(
                 }
                 _effects.tryEmit(MoviesListContract.Effect.ShowMessage(message))
             }
-            .isSuccess
     }
 
     private fun Throwable.asUserMessage(): String =
@@ -210,7 +214,7 @@ class MoviesListViewModel(
         }
 
     private fun setState(reducer: MoviesListContract.ViewState.() -> MoviesListContract.ViewState) {
-        _state.getAndUpdate(reducer)
+        _state.getAndUpdate { state -> MoviesListReducer.reduce(state, reducer) }
     }
 
     private companion object {

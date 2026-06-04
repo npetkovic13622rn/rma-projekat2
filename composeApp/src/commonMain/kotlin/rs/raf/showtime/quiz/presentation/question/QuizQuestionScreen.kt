@@ -1,5 +1,12 @@
 package rs.raf.showtime.quiz.presentation.question
 
+import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.ExperimentalAnimationApi
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInHorizontally
+import androidx.compose.animation.slideOutHorizontally
+import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -87,6 +94,7 @@ fun QuizQuestionRoute(
 }
 
 @Composable
+@OptIn(ExperimentalAnimationApi::class)
 fun QuizQuestionScreen(
     state: QuizQuestionContract.ViewState,
     snackbarHostState: SnackbarHostState,
@@ -119,11 +127,20 @@ fun QuizQuestionScreen(
                         }
                     }
                 }
-                else -> QuizQuestionContent(
-                    state = state,
-                    question = state.currentQuestion,
-                    onIntent = onIntent,
-                )
+                else -> AnimatedContent(
+                    targetState = state.currentQuestion,
+                    transitionSpec = {
+                        (slideInHorizontally { width -> width } + fadeIn())
+                            .togetherWith(slideOutHorizontally { width -> -width } + fadeOut())
+                    },
+                    label = "QuizQuestionTransition",
+                ) { question ->
+                    QuizQuestionContent(
+                        state = state,
+                        question = question,
+                        onIntent = onIntent,
+                    )
+                }
             }
         }
     }
@@ -153,7 +170,7 @@ fun QuizQuestionScreen(
     }
 }
 
-@OptIn(ExperimentalLayoutApi::class)
+@OptIn(ExperimentalAnimationApi::class, ExperimentalLayoutApi::class)
 @Composable
 private fun QuizQuestionContent(
     state: QuizQuestionContract.ViewState,

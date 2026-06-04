@@ -204,6 +204,6 @@ class QuizQuestionViewModel(
         }
 
     private fun setState(reducer: QuizQuestionContract.ViewState.() -> QuizQuestionContract.ViewState) {
-        _state.getAndUpdate(reducer)
+        _state.getAndUpdate { state -> QuizQuestionReducer.reduce(state, reducer) }
     }
 }

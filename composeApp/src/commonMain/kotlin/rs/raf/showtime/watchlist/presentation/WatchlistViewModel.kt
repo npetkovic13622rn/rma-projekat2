@@ -117,6 +117,6 @@ class WatchlistViewModel(
         }
 
     private fun setState(reducer: WatchlistContract.ViewState.() -> WatchlistContract.ViewState) {
-        _state.getAndUpdate(reducer)
+        _state.getAndUpdate { state -> WatchlistReducer.reduce(state, reducer) }
     }
 }

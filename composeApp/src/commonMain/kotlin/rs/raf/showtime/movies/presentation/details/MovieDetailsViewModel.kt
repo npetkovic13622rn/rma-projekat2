@@ -55,6 +55,7 @@ class MovieDetailsViewModel(
         observeMovieDetails(movieId)
         observeFavorite(movieId)
         observeWatchlist(movieId)
+        syncUserLists()
         refresh()
     }
 
@@ -127,6 +128,21 @@ class MovieDetailsViewModel(
         }
     }
 
+    private fun syncUserLists() {
+        viewModelScope.launch {
+            runCatching {
+                favoritesRepository.syncFavorites()
+            }.onFailure { error ->
+                if (error is CancellationException) throw error
+            }
+            runCatching {
+                watchlistRepository.syncWatchlist()
+            }.onFailure { error ->
+                if (error is CancellationException) throw error
+            }
+        }
+    }
+
     private fun toggleFavorite() {
         val movieId = _state.value.movieId
         if (movieId.isBlank()) return
@@ -176,6 +192,6 @@ class MovieDetailsViewModel(
         }
 
     private fun setState(reducer: MovieDetailsContract.ViewState.() -> MovieDetailsContract.ViewState) {
-        _state.getAndUpdate(reducer)
+        _state.getAndUpdate { state -> MovieDetailsReducer.reduce(state, reducer) }
     }
 }

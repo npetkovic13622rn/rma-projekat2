@@ -82,6 +82,6 @@ class LoginViewModel(
         }
 
     private fun setState(reducer: LoginContract.ViewState.() -> LoginContract.ViewState) {
-        _state.getAndUpdate(reducer)
+        _state.getAndUpdate { state -> LoginReducer.reduce(state, reducer) }
     }
 }

@@ -51,8 +51,8 @@ class MoviesRepositoryImpl(
             .distinctUntilChanged()
             .map { genres -> genres.map { it.toDomain() } }
 
-    override suspend fun refreshMovies(filters: MovieFilters, page: Int, pageSize: Int) {
-        runRepositoryCatching("Failed to refresh movies") {
+    override suspend fun refreshMovies(filters: MovieFilters, page: Int, pageSize: Int): Int {
+        return runRepositoryCatching("Failed to refresh movies") {
             val response = moviesApi.getMovies(
                 page = page,
                 pageSize = pageSize,
@@ -76,6 +76,7 @@ class MoviesRepositoryImpl(
                 genres = genres,
                 crossRefs = crossRefs,
             )
+            movies.size
         }
     }
 
@@ -128,12 +129,12 @@ class MoviesRepositoryImpl(
     override suspend fun countMoviesWithImages(): Int =
         moviesDao.countMoviesWithImages()
 
-    private suspend fun runRepositoryCatching(
+    private suspend fun <T> runRepositoryCatching(
         message: String,
-        block: suspend () -> Unit,
-    ) {
+        block: suspend () -> T,
+    ): T {
         try {
-            block()
+            return block()
         } catch (error: Throwable) {
             if (error is CancellationException) throw error
             throw RepositoryException(message, error)

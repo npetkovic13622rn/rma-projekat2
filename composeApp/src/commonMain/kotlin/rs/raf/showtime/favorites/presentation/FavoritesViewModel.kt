@@ -117,6 +117,6 @@ class FavoritesViewModel(
         }
 
     private fun setState(reducer: FavoritesContract.ViewState.() -> FavoritesContract.ViewState) {
-        _state.getAndUpdate(reducer)
+        _state.getAndUpdate { state -> FavoritesReducer.reduce(state, reducer) }
     }
 }

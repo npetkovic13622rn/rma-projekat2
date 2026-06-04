@@ -88,7 +88,7 @@ class SignupViewModel(
         }
 
     private fun setState(reducer: SignupContract.ViewState.() -> SignupContract.ViewState) {
-        _state.getAndUpdate(reducer)
+        _state.getAndUpdate { state -> SignupReducer.reduce(state, reducer) }
     }
 
     private companion object {

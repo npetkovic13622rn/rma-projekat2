@@ -8,11 +8,13 @@ import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.getAndUpdate
 import kotlinx.coroutines.launch
+import rs.raf.showtime.movies.domain.MoviesRepository
 import rs.raf.showtime.quiz.domain.QuizRepository
 import rs.raf.showtime.quiz.domain.QuizRules
 
 class QuizIntroViewModel(
     private val quizRepository: QuizRepository,
+    private val moviesRepository: MoviesRepository,
 ) : ViewModel() {
 
     private val _state = MutableStateFlow(QuizIntroContract.ViewState())
@@ -41,6 +43,10 @@ class QuizIntroViewModel(
         viewModelScope.launch {
             setState { copy(isLoading = true, errorMessage = null) }
             runCatching {
+                val currentCount = quizRepository.getAvailableMovieCount()
+                if (currentCount < QuizRules.QuestionCount) {
+                    moviesRepository.bootstrapQuizPoolIfNeeded(limit = BootstrapMovieLimit)
+                }
                 quizRepository.getAvailableMovieCount()
             }.onSuccess { count ->
                 setState {
@@ -75,6 +81,10 @@ class QuizIntroViewModel(
     }
 
     private fun setState(reducer: QuizIntroContract.ViewState.() -> QuizIntroContract.ViewState) {
-        _state.getAndUpdate(reducer)
+        _state.getAndUpdate { state -> QuizIntroReducer.reduce(state, reducer) }
+    }
+
+    private companion object {
+        const val BootstrapMovieLimit = 100
     }
 }

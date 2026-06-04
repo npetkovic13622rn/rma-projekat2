@@ -7,7 +7,7 @@ interface MoviesRepository {
     fun observeMovieDetails(movieId: String): Flow<MovieDetails?>
     fun observeGenres(): Flow<List<Genre>>
 
-    suspend fun refreshMovies(filters: MovieFilters, page: Int, pageSize: Int)
+    suspend fun refreshMovies(filters: MovieFilters, page: Int, pageSize: Int): Int
     suspend fun refreshMovieDetails(movieId: String)
     suspend fun refreshGenres()
     suspend fun bootstrapQuizPoolIfNeeded(limit: Int = 100)
